@@ -1,4 +1,4 @@
-LEVELDB_VSN ?= "2.0.38"
+LEVELDB_VSN ?= "2.0.38" # custom from https://github.com/basho/leveldb
 SNAPPY_VSN ?= "1.1.9"
 C_SRC_DIR := $(shell pwd)
 PROJECT_DIR := $(abspath $(C_SRC_DIR)/..)
@@ -39,13 +39,14 @@ get-deps:
 	echo "ubuntu-latest image with otp-22, are you happy now?"
 	if [ ! -r snappy-$(SNAPPY_VSN).tar.gz ]; then \
 		wget -O snappy-$(SNAPPY_VSN).tar.gz https://github.com/google/snappy/archive/refs/tags/$(SNAPPY_VSN).tar.gz; \
+		tar -xzf snappy-$(SNAPPY_VSN).tar.gz
 	fi	
 	if [ ! -d leveldb ]; then \
 	    git clone --depth=1 --branch=$(LEVELDB_VSN) https://github.com/basho/leveldb && \
 	    (cd leveldb && git submodule update --depth 1 --init); \
 	fi
 
-compile: get-deps snappy ldb
+compile: snappy ldb
 	for tool in $(TOOLS); do cp leveldb/$$tool $(TARGET_DIR); done
 
 ldb:
@@ -56,9 +57,7 @@ ldb:
 snappy: system/lib/libsnappy.a
 
 system/lib/libsnappy.a:
-	tar -xzf snappy-$(SNAPPY_VSN).tar.gz && \
 	(cd snappy-$(SNAPPY_VSN) && \
-	 git submodule update --init && \
 	 if [ -r autogen.sh ]; then \
 	   ./autogen.sh && ./configure --prefix=$(C_SRC_DIR)/system && $(MAKE) && $(MAKE) install; \
 	 else \
